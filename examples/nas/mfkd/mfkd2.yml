@@ -5,9 +5,9 @@ nas_low_fidelity:
         type: MFKDNasPipeStep
 
     dataset:
-        type: Cifar10
+        type: Cifar100
         common:
-            data_path: '~/cache/datasets/cifar10/'
+            data_path: '~/cache/datasets/cifar100/'
             download: True
         train:
             shuffle: False
@@ -51,7 +51,7 @@ nas_low_fidelity:
         max_samples: 10
     trainer:
         type: MFKDTrainer
-        teacher: '/home/trofim/mobilenetv2_cifar10_teacher.pth'
+        teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
         teacher_num_classes: 10
         epochs: 100
         valid_freq: 10
@@ -72,9 +72,9 @@ nas_high_fidelity:
     pipe_step:
         type: MFKDNasPipeStep
     dataset:
-        type: Cifar10
+        type: Cifar100
         common:
-            data_path: '~/cache/datasets/cifar10/'
+            data_path: '~/cache/datasets/cifar100/'
             download: True
         train:
             shuffle: False
