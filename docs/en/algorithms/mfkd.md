@@ -1,8 +1,22 @@
-# SP-NAS (Serial-to-Parallel Backbone Search for Object Detection)
+# Multi-fidelity Neural Architecture Search with Knowledge Distillation
 
 ## Algorithm Introduction
 
-SP-NAS is an efficient architecture search algorithm for object detection and semantic segmentation based on the backbone network architecture. The existing object detectors usually use the feature extraction network designed and pre-trained on the image classification task as the backbone. We propose an efficient, flexible and task-oriented search scheme based on NAS. which is a two-phase search solution from serial to parallel to reduce repeated ImageNet pre-training or long-time training from scratch.
+https://arxiv.org/pdf/2006.08341.pdf
+
+Neural architecture search (NAS) targets at finding the optimal architecture of
+a neural network for a problem or a family of problems. Evaluations of neural
+architectures are very time-consuming. One of the possible ways to mitigate this
+issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer
+epochs, with fewer channels, etc. In this paper, we propose to improve low-fidelity
+evaluations of neural architectures by using a knowledge distillation. Knowledge
+distillation adds to a loss function a term forcing a network to mimic some teacher
+network. We carry out experiments on CIFAR-100 and ImageNet and study various
+knowledge distillation methods. We show that training on the small part of a dataset
+with such a modified loss function leads to a better selection of neural architectures
+than training with a logistic loss. The proposed low-fidelity evaluations were
+incorporated into a multi-fidelity search algorithm that outperformed the search
+based on high-fidelity evaluations only (training on a full dataset).
 
 ## Algorithm Principles
 
@@ -38,7 +52,11 @@ This method has two phases:
 
 ## Usage Guide
 
-### Example 1: Serial phase
+### Example 1: Train a techer network
+
+%%
+examples/nas/mfkd/train_teacher.yml
+%%
 
 ```yaml
 search_algorithm:
