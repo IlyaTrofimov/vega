@@ -1,0 +1,130 @@
+pipeline: [nas_low_fidelity, nas_high_fidelity]
+
+nas_low_fidelity:
+    pipe_step:
+        type: MFKDNasPipeStep
+
+    dataset:
+        type: Cifar10
+        common:
+            data_path: '~/cache/datasets/cifar10/'
+            download: True
+        train:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+            train_portion: 0.03
+        test:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+    search_space:
+        type: SearchSpace
+        modules: ['custom']
+        custom:
+            name: MobileNetV2
+            num_classes: 10
+            layer_0:
+                repetitions: [1, 2, 3, 4]
+                channels: [16, 24]
+            layer_1:
+                repetitions: [1, 2, 3, 4]
+                channels: [24, 32]
+            layer_2:
+                repetitions: [1, 2, 3, 4]
+                channels: [32, 64]
+            layer_3:
+                repetitions: [1, 2, 3, 4]
+                channels: [64, 96]
+            layer_4:
+                repetitions: [1, 2, 3, 4]
+                channels: [96, 160]
+            layer_5:
+                repetitions: [1, 2, 3, 4]
+                channels: [160, 320]
+            layer_6:
+                repetitions: [1, 2, 3, 4]
+                channels: [320, 640]
+    search_algorithm:
+        type: MFKD2
+        init_samples: 5
+        max_samples: 10
+    trainer:
+        type: MFKDTrainer
+        teacher: '/home/trofim/mobilenetv2_cifar10_teacher.pth'
+        teacher_num_classes: 10
+        epochs: 100
+        valid_freq: 10
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
+        loss:
+            type: KDLoss
+            T: 32
+            alpha: 1
+
+nas_high_fidelity:
+    pipe_step:
+        type: MFKDNasPipeStep
+    dataset:
+        type: Cifar10
+        common:
+            data_path: '~/cache/datasets/cifar10/'
+            download: True
+        train:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+            train_portion: 1.0
+        test:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+    search_space:
+        type: SearchSpace
+        modules: ['custom']
+        custom:
+            name: MobileNetV2
+            num_classes: 10
+            layer_0:
+                repetitions: [1, 2, 3, 4]
+                channels: [16, 24]
+            layer_1:
+                repetitions: [1, 2, 3, 4]
+                channels: [24, 32]
+            layer_2:
+                repetitions: [1, 2, 3, 4]
+                channels: [32, 64]
+            layer_3:
+                repetitions: [1, 2, 3, 4]
+                channels: [64, 96]
+            layer_4:
+                repetitions: [1, 2, 3, 4]
+                channels: [96, 160]
+            layer_5:
+                repetitions: [1, 2, 3, 4]
+                channels: [160, 320]
+            layer_6:
+                repetitions: [1, 2, 3, 4]
+                channels: [320, 640]
+    search_algorithm:
+        type: MFKD2
+        init_samples: 5
+        max_samples: 10
+    trainer:
+        type: Trainer
+        epochs: 100
+        valid_freq: 10
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
