@@ -1,45 +1,61 @@
-# SP-NAS (Serial-to-Parallel Backbone Search for Object Detection)
+# Multi-fidelity Neural Architecture Search with Knowledge Distillation
 
 ## Algorithm Introduction
 
-SP-NAS is an efficient architecture search algorithm for object detection and semantic segmentation based on the backbone network architecture. The existing object detectors usually use the feature extraction network designed and pre-trained on the image classification task as the backbone. We propose an efficient, flexible and task-oriented search scheme based on NAS. which is a two-phase search solution from serial to parallel to reduce repeated ImageNet pre-training or long-time training from scratch.
+https://arxiv.org/pdf/2006.08341.pdf
+
+Neural architecture search (NAS) targets at finding the optimal architecture of a neural network for a problem or a family of problems. Evaluations of neural architectures are very time-consuming. One of the possible ways to mitigate this issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer epochs, with fewer channels, etc. In this paper, we propose to improve low-fidelity
+evaluations of neural architectures by using a knowledge distillation. Knowledge distillation adds to a loss function a term forcing a network to mimic some teacher network. The training on the small part of a dataset with such a modified loss function leads to a better selection of neural architectures
+than training with a logistic loss. The proposed low-fidelity evaluations were incorporated into a multi-fidelity search algorithm that outperformed the search
+based on high-fidelity evaluations only (training on a full dataset).
 
 ## Algorithm Principles
 
-This method has two phases:
+The library includes two algorithms:
 
-1. In serial phase, the block sequence with optimal scaling ratio and output channel is found by using the "swap-expand-reignite" search policy. This search policy can guranteen a new searched architecture to completely inherit of weight from arichtectures before morphism.
-2. In parallel phase, parallized network structures are designed, sub-networks integrated by different feature layers are searched to better fuse the high-level and low-level semantic features. The following figure shows the search policy.
+1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained for on a small random subset. Then the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
+2) MFKD2 combines low-fidelity and high-fidelity evaluations (training on the subset and full dataset) in the multi-fidelity algorithm. The MFKD2 algorithm
+does sequentially two series of steps for low- and high-fidelity evaluations, using the optimum of the former one as an initial point for the later one 
 
-![sp-nas](./images/sp_nas.png)
+## Search Space 
+User can specify any search space, in examples we used the MobileNetV2 search space with various numbers of block repetitions and channels count per layer.
 
-## Search Space and Search Policy
-
-**Serial-level**
-
-- Swap-expand-reignite policy:  Growing starts from a small network to avoid repeated ImageNet pre-training.
-  - The new candidate network is obtained by "switching" or "expanding" the grown network for many times.
-  - Quickly train and evaluate candidate networks based on inherited parameters.
-  - When the growth reaches the bottleneck, the network is re-trained using ImageNet. The number of ignition times is no more than 2.
-
-- Constrained optimal network: A serial network with limited network resources (latency, video memory usage, or complexity) is selected to obtain the maximum performance.
-
-- Search space configuration:
-  - Block type: Basic Block, BottleNeck Block, and ResNext;
-  - Network depth: 8 to 60 blocks;
-  - Number of stages: 5 to 7;
-  - Width: Position where the channel size is doubled in the entire sequence.
-
-**Parallel-level**
-
-- Based on the result SerialNet from the serial search phase (or the existing handcraft serial network such as ResNet series), search for the parallel structure stacked on SerialNet to better utilize and fuse feature information with different resolutions from different feature layers.
-- Search policy: Random sampling to meet the resource constraints: The probability of adding additional subnets is inversely proportional to the FLOPS of the subnets to be added.
-- Search space: SerialNet is divided into L self-networks based on the number of feature layers and K sub-networks are searched for in each phase.
-
+```yaml
+search_space:
+        type: SearchSpace
+        modules: ['custom']
+        custom:
+            name: MobileNetV2
+            num_classes: 100
+            layer_0:
+                repetitions: [1, 2, 3, 4]
+                channels: [16, 24]
+            layer_1:
+                repetitions: [1, 2, 3, 4]
+                channels: [24, 32]
+            layer_2:
+                repetitions: [1, 2, 3, 4]
+                channels: [32, 64]
+            layer_3:
+                repetitions: [1, 2, 3, 4]
+                channels: [64, 96]
+            layer_4:
+                repetitions: [1, 2, 3, 4]
+                channels: [96, 160]
+            layer_5:
+                repetitions: [1, 2, 3, 4]
+                channels: [160, 320]
+            layer_6:
+                repetitions: [1, 2, 3, 4]
+                channels: [320, 640]
+```
 ## Usage Guide
 
-### Example 1: Serial phase
+### Example 1: Train a techer network
 
+%%examples/nas/mfkd/train_teacher.yml%%
+
+Then run %%examples/nas/mfkd/mfkd1.yml%% or %%examples/nas/mfkd/mfkd2.yml%%.
 ```yaml
 search_algorithm:
     type: SpNas
@@ -61,52 +77,88 @@ search_space:
     epoch: 1        # Number of fast trainings for each sampling structure
 ```
 
-### Example 2: Parallel phase
+### Example 1: MFK1 Algorithms
 
 ```yaml
-search_algorithm:
-    type: SpNas
-    codec: SpNasCodec
-    total_list: 'total_list_p.csv'  # Record the search result.
-    sample_level: 'parallel'        # Serial search:'serial', parallel search: 'parallel'
-    max_sample: 10      # Maximum number of structures
-    max_optimal: 1
-    serial_settings:
-         last_search_result: 'total_list_s.csv'     # Search based on existing search records.
-         regnition: False   # Whether the ImageNet regnite
-search_space:
-    type: SearchSpace
-    config_template_file: ./faster_rcnn_r50_fpn_1x.py   # start point network is configured. config
-    epoch: 1        # Each sampling Fast training data of structure
+    search_algorithm:
+        type: MFKD1
+        max_samples: 30
+        seed: 7
+    trainer:
+        type: MFKDTrainer
+        teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
+        teacher_num_classes: 100
+        epochs: 100
+        valid_freq: 10
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
+        loss:
+            type: NSTLoss
+            beta: 12.5
 ```
 
-### Example 3: Fully train
+### Example 2: MFKD2 Algorithm
 
-**Completely train the best network based on the search records.**
+The MFKD2 algorithm uses two levels of fidelity specified by sequencial pipelines:
 
-```yaml
-trainer:
-    type: SpNasTrainer
-    gpus: 8
-    model_desc_file: 'total_list_p.csv' 
-    config_template: "./faster_rcnn_r50_fpn_1x.py"
-    regnition: False    # Whether ImageNet regnite
-    epoch: 12
-    debug: False
+```yml
+pipeline: [nas_low_fidelity, nas_high_fidelity]
 ```
 
-**Fully trained optimal network based on network coding**
+Parameters of the first pipeline (low-fidelity):
 
-```yaml
-trainer:
-    type: SpNasTrainer
-    gpus: 8
-    model_desc_file: "{local_base_path}/output/total_list_p.csv"
-    config_template: "./faster_rcnn_r50_fpn_1x.py"
-    regnition: False    # Whether ImageNet regnite
-    epoch: 12
-    debug: False
+```yml
+    search_algorithm:
+        type: MFKD2
+        init_samples: 5
+        max_samples: 10
+    trainer:
+        type: MFKDTrainer
+        teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
+        teacher_num_classes: 10
+        epochs: 100
+        valid_freq: 10
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
+        loss:
+            type: KDLoss
+            T: 32
+            alpha: 1
 ```
+
+Parameters of the last pipeline (high-fidelity):
+
+```yml
+    search_algorithm:
+        type: MFKD2
+        init_samples: 5
+        max_samples: 10
+    trainer:
+        type: Trainer
+        epochs: 100
+        valid_freq: 10
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
+```
+
 
 ### Algorithm output
 
