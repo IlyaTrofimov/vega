@@ -1,0 +1,58 @@
+pipeline: [teacher_train]
+
+teacher_train:
+    pipe_step:
+        type: FullyTrainPipeStep
+
+    dataset:
+        type: Cifar100
+        common:
+            data_path: '~/cache/datasets/cifar100/'
+            download: True
+        train:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+            train_portion: 1.0
+        test:
+            shuffle: False
+            num_workers: 8
+            batch_size: 128
+    model:
+        model_desc:
+            modules: ['custom']
+            custom:
+                name: MobileNetV2
+                num_classes: 100
+                layer_0:
+                    repetitions: 1
+                    channels: 16
+                layer_1:
+                    repetitions: 2
+                    channels: 24
+                layer_2:
+                    repetitions: 3
+                    channels: 32
+                layer_3:
+                    repetitions: 4
+                    channels: 64
+                layer_4:
+                    repetitions: 3
+                    channels: 96
+                layer_5:
+                    repetitions: 3
+                    channels: 160
+                layer_6:
+                    repetitions: 1
+                    channels: 320
+    trainer:
+        type: Trainer
+        epochs: 100
+        optim:
+            type: SGD
+            lr: 0.1
+            momentum: 0.9
+            weight_decay: 5.0e-4
+        lr_scheduler:
+            type: CosineAnnealingLR
+            T_max: 100
