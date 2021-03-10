@@ -4,28 +4,17 @@
 
 https://arxiv.org/pdf/2006.08341.pdf
 
-Neural architecture search (NAS) targets at finding the optimal architecture of
-a neural network for a problem or a family of problems. Evaluations of neural
-architectures are very time-consuming. One of the possible ways to mitigate this
-issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer
-epochs, with fewer channels, etc. In this paper, we propose to improve low-fidelity
-evaluations of neural architectures by using a knowledge distillation. Knowledge
-distillation adds to a loss function a term forcing a network to mimic some teacher
-network. We carry out experiments on CIFAR-100 and ImageNet and study various
-knowledge distillation methods. We show that training on the small part of a dataset
-with such a modified loss function leads to a better selection of neural architectures
-than training with a logistic loss. The proposed low-fidelity evaluations were
-incorporated into a multi-fidelity search algorithm that outperformed the search
+Neural architecture search (NAS) targets at finding the optimal architecture of a neural network for a problem or a family of problems. Evaluations of neural architectures are very time-consuming. One of the possible ways to mitigate this issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer epochs, with fewer channels, etc. In this paper, we propose to improve low-fidelity
+evaluations of neural architectures by using a knowledge distillation. Knowledge distillation adds to a loss function a term forcing a network to mimic some teacher network. The training on the small part of a dataset with such a modified loss function leads to a better selection of neural architectures
+than training with a logistic loss. The proposed low-fidelity evaluations were incorporated into a multi-fidelity search algorithm that outperformed the search
 based on high-fidelity evaluations only (training on a full dataset).
 
 ## Algorithm Principles
 
-This method has two phases:
+The library includes two algorithms:
 
-1. In serial phase, the block sequence with optimal scaling ratio and output channel is found by using the "swap-expand-reignite" search policy. This search policy can guranteen a new searched architecture to completely inherit of weight from arichtectures before morphism.
-2. In parallel phase, parallized network structures are designed, sub-networks integrated by different feature layers are searched to better fuse the high-level and low-level semantic features. The following figure shows the search policy.
-
-![sp-nas](./images/sp_nas.png)
+1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained for on a small random subset. Then the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
+2) MFKD2 
 
 ## Search Space and Search Policy
 
