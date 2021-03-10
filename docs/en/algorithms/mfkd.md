@@ -60,8 +60,12 @@ trainer:
         teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
         teacher_num_classes: 100
 ```
+Finally, both of the algorithms save parameters of the best network in the file ```{local_base_path}/best_model_desc.json``` and train it from scratch.
+Hyperparameters of training are in the ```fully_train``` pipestep.
 
-### Example 1: MFKD1 Algorithms
+### Example 1: MFKD1 Algorithm
+
+Here are the parameters of the MFKD1 algorithm besides other parameters:
 
 ```yaml
     search_algorithm:
@@ -92,7 +96,7 @@ trainer:
 The MFKD2 algorithm uses two levels of fidelity specified by sequencial pipelines:
 
 ```yml
-pipeline: [nas_low_fidelity, nas_high_fidelity]
+pipeline: [nas_low_fidelity, nas_high_fidelity, fully_train]
 ```
 
 Parameters of the first pipeline (low-fidelity):
@@ -146,9 +150,4 @@ Parameters of the last pipeline (high-fidelity):
 
 ### Algorithm output
 
-- The optimal models with fully training.
-- Logs of all models during the entire search process, and logs for models from the Pareto front(pareto_front.csv).
-
-## Benchmark
-
-Benchmark configuration: [sp_nas.yml](https://github.com/huawei-noah/vega/tree/master/examples/nas/sp_nas.yml)
+The optimal models trained from scratch.
