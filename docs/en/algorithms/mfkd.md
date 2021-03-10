@@ -51,33 +51,17 @@ search_space:
 ```
 ## Usage Guide
 
-### Example 1: Train a techer network
-
-%%examples/nas/mfkd/train_teacher.yml%%
-
-Then run %%examples/nas/mfkd/mfkd1.yml%% or %%examples/nas/mfkd/mfkd2.yml%%.
+Firsly, one needs to train a teacher network on the dataset of interest, here is an example for MobileNetV2 ```examples/nas/mfkd/train_teacher.yml```.
+Then run MFKD1 or MFKD2 (```examples/nas/mfkd/mfkd1.yml```, ```examples/nas/mfkd/mfkd2.yml```).
+In both of them a user should specify the path to the teacher model and the number of classes in the dataset:
 ```yaml
-search_algorithm:
-    type: SpNas
-    codec: SpNasCodec
-    total_list: 'total_list_s.csv'  # Record the search result.
-    sample_level: 'serial'          # Serial search: 'serial', parallel search: 'parallel'
-    max_sample: 10      # Maximum number of adopted structures
-    max_optimal: 5      # The top 5 seed networks are reserved in the serial phase and start to mutate, set the number of parallel phases to 1
-    serial_settings:
-         num_mutate: 3
-         addstage_ratio: 0.05   # Probability of the number of new feature layers
-         expend_ratio: 0.3      # Probability of the number of new blocks
-         max_stages: 6          # Maximum number of allowed feature layers
-    regnition: False            # Whether ImageNet has been performed. regnite#
-#    last_search_result: # Whether to search for the config epoch of the
-search_space:
-    type: SearchSpace
-    config_template_file: ./faster_rcnn_r50_fpn_1x.py   # starting point network based on the existing search records
-    epoch: 1        # Number of fast trainings for each sampling structure
+trainer:
+        type: MFKDTrainer
+        teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
+        teacher_num_classes: 100
 ```
 
-### Example 1: MFK1 Algorithms
+### Example 1: MFKD1 Algorithms
 
 ```yaml
     search_algorithm:
