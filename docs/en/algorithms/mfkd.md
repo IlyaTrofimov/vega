@@ -10,9 +10,11 @@ Neural architecture search (NAS) targets at finding the optimal architecture of 
 
 The library includes two algorithms:
 
-1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained for on a small random subset. Then the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
+1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained on a small random subset. Then, the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
 2) MFKD2 combines low-fidelity and high-fidelity evaluations (training on the subset and full dataset) in the multi-fidelity algorithm. The MFKD2 algorithm
 does sequentially two series of steps for low- and high-fidelity evaluations, using the optimum of the former one as an initial point for the later one 
+
+Two knowledge distillation methods are available: original 
 
 ## Search Space 
 User can specify any search space, in examples we used the MobileNetV2 search space with various numbers of block repetitions and channels count per layer.
