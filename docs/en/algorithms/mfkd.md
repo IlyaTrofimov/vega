@@ -4,18 +4,17 @@
 
 https://arxiv.org/pdf/2006.08341.pdf
 
-Neural architecture search (NAS) targets at finding the optimal architecture of a neural network for a problem or a family of problems. Evaluations of neural architectures are very time-consuming. One of the possible ways to mitigate this issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer epochs, with fewer channels, etc. In this paper, we propose to improve low-fidelity
-evaluations of neural architectures by using a knowledge distillation. Knowledge distillation adds to a loss function a term forcing a network to mimic some teacher network. The training on the small part of a dataset with such a modified loss function leads to a better selection of neural architectures
-than training with a logistic loss. The proposed low-fidelity evaluations were incorporated into a multi-fidelity search algorithm that outperformed the search
-based on high-fidelity evaluations only (training on a full dataset).
+Neural architecture search (NAS) targets at finding the optimal architecture of a neural network for a problem or a family of problems. Evaluations of neural architectures are very time-consuming. One of the possible ways to mitigate this issue is to use low-fidelity evaluations, namely training on a part of a dataset, fewer epochs, with fewer channels, etc. The method improves low-fidelity evaluations of neural architectures by using a knowledge distillation. Knowledge distillation adds to a loss function a term forcing a network to mimic some teacher network. The training on the small part of a dataset with such a modified loss function leads to a better selection of neural architectures than training with a logistic loss. The proposed low-fidelity evaluations were incorporated into a multi-fidelity search algorithm that outperforms the search based on high-fidelity evaluations only (training on a full dataset).
 
 ## Algorithm Principles
 
 The library includes two algorithms:
 
-1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained for on a small random subset. Then the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
+1) MFKD1 uses low-fidelity evaluations with KD only. Several architectures are sampled randomly from the search space, trained on a small random subset. Then, the GPR regression is fitter to predict the testing accuracy of a network. Finally, the architecture from the whole search space is selected by maximum predicted accuracy.
 2) MFKD2 combines low-fidelity and high-fidelity evaluations (training on the subset and full dataset) in the multi-fidelity algorithm. The MFKD2 algorithm
 does sequentially two series of steps for low- and high-fidelity evaluations, using the optimum of the former one as an initial point for the later one 
+
+Two knowledge distillation methods are available: original 
 
 ## Search Space 
 User can specify any search space, in examples we used the MobileNetV2 search space with various numbers of block repetitions and channels count per layer.
@@ -51,33 +50,21 @@ search_space:
 ```
 ## Usage Guide
 
-### Example 1: Train a techer network
-
-%%examples/nas/mfkd/train_teacher.yml%%
-
-Then run %%examples/nas/mfkd/mfkd1.yml%% or %%examples/nas/mfkd/mfkd2.yml%%.
+Firsly, one needs to train a teacher network on the dataset of interest, here is an example for MobileNetV2 ```examples/nas/mfkd/train_teacher.yml```.
+Then run MFKD1 or MFKD2 (```examples/nas/mfkd/mfkd1.yml```, ```examples/nas/mfkd/mfkd2.yml```).
+In both of them a user should specify the path to the teacher model and the number of classes in the dataset:
 ```yaml
-search_algorithm:
-    type: SpNas
-    codec: SpNasCodec
-    total_list: 'total_list_s.csv'  # Record the search result.
-    sample_level: 'serial'          # Serial search: 'serial', parallel search: 'parallel'
-    max_sample: 10      # Maximum number of adopted structures
-    max_optimal: 5      # The top 5 seed networks are reserved in the serial phase and start to mutate, set the number of parallel phases to 1
-    serial_settings:
-         num_mutate: 3
-         addstage_ratio: 0.05   # Probability of the number of new feature layers
-         expend_ratio: 0.3      # Probability of the number of new blocks
-         max_stages: 6          # Maximum number of allowed feature layers
-    regnition: False            # Whether ImageNet has been performed. regnite#
-#    last_search_result: # Whether to search for the config epoch of the
-search_space:
-    type: SearchSpace
-    config_template_file: ./faster_rcnn_r50_fpn_1x.py   # starting point network based on the existing search records
-    epoch: 1        # Number of fast trainings for each sampling structure
+trainer:
+        type: MFKDTrainer
+        teacher: '/home/trofim/mobilenetv2_cifar100_teacher.pth'
+        teacher_num_classes: 100
 ```
+Finally, both of the algorithms save parameters of the best network in the file ```{local_base_path}/best_model_desc.json``` and train it from scratch.
+Hyperparameters of training are in the ```fully_train``` pipestep.
 
-### Example 1: MFK1 Algorithms
+### Example 1: MFKD1 Algorithm
+
+Here are the parameters of the MFKD1 algorithm besides other parameters:
 
 ```yaml
     search_algorithm:
@@ -108,7 +95,7 @@ search_space:
 The MFKD2 algorithm uses two levels of fidelity specified by sequencial pipelines:
 
 ```yml
-pipeline: [nas_low_fidelity, nas_high_fidelity]
+pipeline: [nas_low_fidelity, nas_high_fidelity, fully_train]
 ```
 
 Parameters of the first pipeline (low-fidelity):
@@ -162,9 +149,4 @@ Parameters of the last pipeline (high-fidelity):
 
 ### Algorithm output
 
-- The optimal models with fully training.
-- Logs of all models during the entire search process, and logs for models from the Pareto front(pareto_front.csv).
-
-## Benchmark
-
-Benchmark configuration: [sp_nas.yml](https://github.com/huawei-noah/vega/tree/master/examples/nas/sp_nas.yml)
+The optimal models trained from scratch.
