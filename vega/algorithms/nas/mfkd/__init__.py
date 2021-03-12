@@ -1,1 +1,1 @@
-from .mfkd import MFKD1
+from .mfkd import MFKD1, MFKD2
