@@ -3,7 +3,6 @@ from .pipe_step import PipeStep
 from .nas_pipe_step import NasPipeStep
 from .pipeline import Pipeline
 from .generator import Generator
-from .generator_mf import GeneratorMF
 from .fully_train_pipe_step import FullyTrainPipeStep
 from .benchmark_pipe_step import BenchmarkPipeStep
 from .mfkd_nas_pipe_step import MFKDNasPipeStep
